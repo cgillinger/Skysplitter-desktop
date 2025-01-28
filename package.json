@@ -1,6 +1,6 @@
 {
   "name": "skysplitter-desktop",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "Split and post long text to Bluesky - Desktop Edition",
   "main": "main.js",
   "author": "Christian Gillinger",
