@@ -1,7 +1,7 @@
 /**
  * Skysplitter Desktop - Main Application Logic
  * Version: 1.0.0
- * Author: Christian Gillinger
+ * Author: Christian Gillinger 
  * License: MIT
  */
 
@@ -14,7 +14,6 @@ class SkySplitter {
     constructor() {
         this.client = new BlueskyClient();
         this.links = new Set();
-        this.embeds = new Map();
         this.currentPosts = [];
         this.init();
     }
@@ -37,11 +36,44 @@ class SkySplitter {
     showAppView() {
         document.getElementById('loginView').classList.add('hidden');
         document.getElementById('appView').classList.remove('hidden');
+        this.updateUserInfo();
     }
 
     showLoginView() {
         document.getElementById('loginView').classList.remove('hidden');
         document.getElementById('appView').classList.add('hidden');
+    }
+
+    async updateUserInfo() {
+        if (!this.client.currentUser) return;
+
+        let userInfoContainer = document.getElementById('userInfo');
+        const textInputContainer = document.getElementById('textInput');
+        
+        if (!userInfoContainer && textInputContainer) {
+            userInfoContainer = document.createElement('div');
+            userInfoContainer.id = 'userInfo';
+            textInputContainer.parentNode.insertBefore(userInfoContainer, textInputContainer);
+        }
+        
+        if (userInfoContainer) {
+            const avatarUrl = this.client.currentUser.avatar || '../../assets/bluesky.png';
+            
+            userInfoContainer.innerHTML = `
+                <div class="profile-container">
+                    <img 
+                        src="${avatarUrl}" 
+                        alt="Profile" 
+                        class="profile-image"
+                        onerror="this.src='../../assets/bluesky.png'"
+                    >
+                    <div class="profile-info">
+                        <span class="display-name">${this.client.currentUser.displayName || this.client.currentUser.handle}</span>
+                        <span class="handle">@${this.client.currentUser.handle}</span>
+                    </div>
+                </div>
+            `;
+        }
     }
 
     setupEventListeners() {
@@ -63,16 +95,26 @@ class SkySplitter {
             this.handlePost();
         });
 
-        if (!document.getElementById('logoutButton')) {
+        // Create and add logout button
+        const appView = document.getElementById('appView');
+        if (appView) {
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'text-right mb-4';
+            
             const logoutButton = document.createElement('button');
-            logoutButton.id = 'logoutButton';
             logoutButton.textContent = 'Logout';
-            logoutButton.className = 'bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 absolute top-4 right-4';
+            logoutButton.className = 'bg-red-600 hover:bg-red-700';
             logoutButton.addEventListener('click', () => this.handleLogout());
-            document.getElementById('appView').appendChild(logoutButton);
+            
+            buttonContainer.appendChild(logoutButton);
+            const textInput = document.getElementById('textInput');
+            if (textInput) {
+                textInput.parentNode.insertBefore(buttonContainer, textInput);
+            }
         }
     }
 
+    // Rest of the class methods remain unchanged
     async handleLogin(event) {
         const username = document.getElementById('username').value;
         const appPassword = document.getElementById('appPassword').value;
@@ -92,6 +134,8 @@ class SkySplitter {
     async handleLogout() {
         try {
             await this.client.logout();
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo) userInfo.remove();
             this.showLoginView();
             this.showNotification('Logged out successfully', 'success');
         } catch (error) {
@@ -103,10 +147,14 @@ class SkySplitter {
         const links = this.detectLinks(text);
         this.updateLinkSection(links);
         this.updateCharCount(text);
+        
+        // Update links Set
+        this.links.clear();
+        links.forEach(link => this.links.add(link));
     }
 
     detectLinks(text) {
-        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
         return text.match(urlRegex) || [];
     }
 
@@ -173,36 +221,55 @@ class SkySplitter {
         const words = text.split(' ');
         let posts = [];
         let currentPost = '';
+        let currentLinks = new Set();
         
         for (let i = 0; i < words.length; i++) {
             const word = words[i];
+            const isLink = this.detectLinks(word).length > 0;
             const potentialPostNumber = posts.length + 1;
             const maxContinuationLength = ` (${potentialPostNumber}/?)`.length;
             
             if (currentPost.length + 1 + word.length + maxContinuationLength <= MAX_POST_LENGTH) {
                 currentPost += (currentPost ? ' ' : '') + word;
+                if (isLink) {
+                    currentLinks.add(word);
+                }
             } else {
                 if (currentPost) {
-                    posts.push(currentPost);
+                    posts.push({
+                        text: currentPost,
+                        links: Array.from(currentLinks)
+                    });
                     currentPost = word;
+                    currentLinks = new Set();
+                    if (isLink) {
+                        currentLinks.add(word);
+                    }
                 } else {
                     const availableLength = MAX_POST_LENGTH - maxContinuationLength;
-                    posts.push(word.substring(0, availableLength));
+                    posts.push({
+                        text: word.substring(0, availableLength),
+                        links: []
+                    });
                     currentPost = word.substring(availableLength);
+                    if (isLink) {
+                        currentLinks.add(word);
+                    }
                 }
             }
         }
         
         if (currentPost) {
-            posts.push(currentPost);
+            posts.push({
+                text: currentPost,
+                links: Array.from(currentLinks)
+            });
         }
 
-        return posts.map((post, index) => {
-            if (posts.length > 1) {
-                return `${post} (${index + 1}/${posts.length})`;
-            }
-            return post;
-        });
+        return posts.map((post, index) => ({
+            ...post,
+            text: posts.length > 1 ? `${post.text} (${index + 1}/${posts.length})` : post.text
+        }));
     }
 
     showPreview(posts) {
@@ -215,10 +282,16 @@ class SkySplitter {
         posts.forEach((post, index) => {
             const preview = document.createElement('div');
             preview.className = 'preview-item';
+            
+            const linksHtml = post.links.length > 0 
+                ? `<div class="text-sm text-blue-500 mt-2">${post.links.length} link(s) detected</div>` 
+                : '';
+            
             preview.innerHTML = `
                 <div class="font-medium mb-2">Post ${index + 1} of ${posts.length}</div>
-                <div class="mt-2 border-l-4 border-blue-500 pl-3">${post}</div>
-                <div class="text-sm text-gray-500 mt-2">${post.length} characters</div>
+                <div class="mt-2 border-l-4 border-blue-500 pl-3">${post.text}</div>
+                ${linksHtml}
+                <div class="text-sm text-gray-500 mt-2">${post.text.length} characters</div>
             `;
             postPreviews.appendChild(preview);
         });
@@ -241,7 +314,7 @@ class SkySplitter {
                     };
                 }
 
-                const response = await this.client.createPost(post, null, reply);
+                const response = await this.client.createPost(post.text, post.links, reply);
 
                 if (i === 0) {
                     rootPost = {
@@ -265,6 +338,7 @@ class SkySplitter {
             document.getElementById('previewArea').classList.add('hidden');
             this.currentPosts = [];
             this.updateCharCount('');
+            this.links.clear();
             
         } catch (error) {
             this.showNotification(`Error: ${error.message}`, 'error');
@@ -294,6 +368,6 @@ class SkySplitter {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', () => {
     window.app = new SkySplitter();
 });

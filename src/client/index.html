@@ -14,7 +14,7 @@
                 <img 
                     src="../../assets/bluesky.png" 
                     alt="Bluesky Logo" 
-                    class="logo-image animate-fade-in"
+                    class="logo-image"
                 >
                 <h1 class="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400 pb-4">Skysplitter</h1>
             </div>
@@ -63,19 +63,23 @@
         </div>
 
         <div id="appView" class="hidden">
-            <div id="textInput" class="bg-white p-6 rounded-lg shadow-md">
-                <textarea id="content" class="w-full h-64 p-4 border rounded-md resize-none" placeholder="Enter your text here..."></textarea>
-                
-                <div id="linkSection" class="mt-4 hidden">
-                    <h3 class="font-semibold mb-2">Detected Links</h3>
-                    <div id="linkList" class="space-y-2"></div>
-                </div>
+            <!-- User Info will be inserted here by JavaScript -->
+            <div id="controlContainer" class="space-y-4">
+                <!-- Logout button will be inserted here -->
+                <div id="textInput" class="bg-white p-6 rounded-lg shadow-md">
+                    <textarea id="content" class="w-full h-64 p-4 border rounded-md resize-none" placeholder="Enter your text here..."></textarea>
+                    
+                    <div id="linkSection" class="mt-4 hidden">
+                        <h3 class="font-semibold mb-2">Detected Links</h3>
+                        <div id="linkList" class="space-y-2"></div>
+                    </div>
 
-                <div class="flex justify-between items-center mt-4">
-                    <span id="charCount" class="text-sm text-gray-600">0 characters</span>
-                    <button id="splitButton" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
-                        Split
-                    </button>
+                    <div class="flex justify-between items-center mt-4">
+                        <span id="charCount" class="text-sm text-gray-600">0 characters</span>
+                        <button id="splitButton" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700" disabled>
+                            Split
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -91,6 +95,6 @@
         </div>
     </div>
 
-    <script type="module" src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
