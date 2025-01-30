@@ -1,6 +1,6 @@
 /**
  * Skysplitter Desktop - Main Application Logic
- * Version: 1.0.0
+ * Version: 1.0.2
  * Author: Christian Gillinger 
  * License: MIT
  */

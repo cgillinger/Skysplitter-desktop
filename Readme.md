@@ -1,16 +1,19 @@
 # Skysplitter Desktop
 
-Skysplitter is a desktop application that helps you split long texts into multiple posts for Bluesky social network. It automatically handles thread creation and maintains continuity between posts.
+Skysplitter is a desktop application that helps you split long texts into multiple posts for the Bluesky social network. It automatically handles thread creation and maintains continuity between posts.
 
 <div align="center">
+  <img src="screenshots/screenshot3.png" alt="Login Interface" width="800"/>
+  <p><em>Secure login interface with App Password support</em></p>
+  
   <img src="screenshots/screenshot.png" alt="Main Interface" width="800"/>
-  <p><em>Main interface of Skysplitter Desktop</em></p>
+  <p><em>Main text input interface with user profile</em></p>
   
   <img src="screenshots/screenshot1.png" alt="Text Splitting Preview" width="800"/>
-  <p><em>Preview of text splitting functionality</em></p>
+  <p><em>Preview of text splitting with automatic thread numbering</em></p>
   
-  <img src="screenshots/screenshot2.png" alt="Dark Mode Interface" width="800"/>
-  <p><em>And when you are happy you just press "Post thread"</em></p>
+  <img src="screenshots/screenshot2.png" alt="Thread Preview" width="800"/>
+  <p><em>Final thread preview with posting option</em></p>
 </div>
 
 ## Features
@@ -19,14 +22,15 @@ Skysplitter is a desktop application that helps you split long texts into multip
 - Maintain thread continuity
 - Automatic post numbering (e.g., 1/5, 2/5, etc.)
 - Character count visualization
-- Link detection and management
+- Link detection and management with embedding support
 - Dark mode support
 - Portable application - no installation required
+- Improved UI with clearer user identification and a refreshed icon
 
 ## Quick Start
 
 ### Option 1: Using Pre-built Executable
-1. Download `Skysplitter-1.0.1.exe` from the `releases` folder
+1. Download `Skysplitter-1.0.2.exe` from the `releases` folder
 2. Double-click to run the application
 3. No installation needed!
 
@@ -97,11 +101,19 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Version History
 
-Current version: 1.0.1
+Current version: 1.0.2
 
 ### Changelog
-- v1.0.1 - Minor updates and improvements
-- v1.0.0 - Initial release
+
+- **v1.0.2**
+  - **New Features**: Real-time text processing, link embedding previews
+  - **UI Updates**: New app icon, improved user identification, fixed overlapping header
+  - **Security Enhancements**: Improved session management with temporary credential storage
+  - **Bug Fixes & Performance**: Minor fixes and optimizations
+  - **Updated Screenshots**: Reflecting the latest UI improvements
+
+- **v1.0.1** - Minor updates and improvements
+- **v1.0.0** - Initial release
 
 ## Author
 
