@@ -21,16 +21,16 @@ Skysplitter is a desktop application that helps you split long texts into multip
 - Split long text into multiple posts automatically
 - Maintain thread continuity
 - Automatic post numbering (e.g., 1/5, 2/5, etc.)
-- Character count visualization
-- Link detection and management with embedding support
+- Dedicated link field for clean URL sharing
+- Link preview cards with metadata
 - Dark mode support
 - Portable application - no installation required
-- Improved UI with clearer user identification and a refreshed icon
+- Improved UI with clearer user identification
 
 ## Quick Start
 
 ### Option 1: Using Pre-built Executable
-1. Download `Skysplitter-1.0.2.exe` from the `releases` folder
+1. Download `Skysplitter-1.0.3.exe` from the `releases` folder
 2. Double-click to run the application
 3. No installation needed!
 
@@ -61,8 +61,9 @@ Skysplitter is a desktop application that helps you split long texts into multip
    - For security, use an App Password instead of your main password
    - Generate an App Password at [Bluesky App Passwords](https://bsky.app/settings/app-passwords)
 3. Enter or paste your long text
-4. Click "Split" to preview how the text will be divided
-5. Click "Post Thread" to publish your posts
+4. (Optional) Add a URL in the dedicated link field
+5. Click "Split" to preview how the text will be divided
+6. Click "Post Thread" to publish your posts
 
 ## Security Note
 
@@ -101,16 +102,22 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Version History
 
-Current version: 1.0.2
+Current version: 1.0.3
 
 ### Changelog
+
+- **v1.0.3**
+  - **New Features**: Dedicated link field for simplified link handling
+  - **UI Changes**: Removed automatic link detection, added manual link input
+  - **UX Improvements**: Links are now always added to final post in thread
+  - **Bug Fixes**: Resolved issues with link parsing and formatting
+  - **Performance**: Optimized link handling and preview generation
 
 - **v1.0.2**
   - **New Features**: Real-time text processing, link embedding previews
   - **UI Updates**: New app icon, improved user identification, fixed overlapping header
   - **Security Enhancements**: Improved session management with temporary credential storage
   - **Bug Fixes & Performance**: Minor fixes and optimizations
-  - **Updated Screenshots**: Reflecting the latest UI improvements
 
 - **v1.0.1** - Minor updates and improvements
 - **v1.0.0** - Initial release

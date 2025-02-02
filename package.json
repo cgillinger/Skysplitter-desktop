@@ -1,6 +1,6 @@
 {
   "name": "skysplitter-desktop",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Split and post long text to Bluesky - Desktop Edition",
   "main": "main.js",
   "author": "Christian Gillinger",
@@ -25,17 +25,23 @@
     "start": "electron .",
     "build": "electron-builder",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder --win --mac --linux"
+    "dist": "electron-builder --win --mac --linux",
+    "dist:linux": "electron-builder --linux",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "postinstall": "electron-builder install-app-deps"
   },
   "build": {
     "appId": "com.skysplitter.desktop",
     "productName": "Skysplitter",
+    "copyright": "Copyright © 2024 Christian Gillinger",
     "directories": {
       "output": "dist",
       "buildResources": "assets"
     },
     "files": [
       "**/*",
+      "assets/**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
       "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
       "!**/node_modules/*.d.ts",
@@ -43,19 +49,63 @@
       "!**/.{idea,git,githubusercontent,vs}",
       "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,__pycache__,thumbs.db,.gitignore,.gitattributes,.editorconfig,.flowconfig,.yarn-metadata.json,.*.yml,*.yaml}"
     ],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": ["**/*"]
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
+      "category": "Network",
+      "icon": "assets/icons",
+      "artifactName": "${productName}-${version}.${ext}"
+    },
     "win": {
       "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
         {
           "target": "portable",
           "arch": ["x64"]
         }
       ],
       "icon": "assets/bluesky.ico",
-      "artifactName": "${productName}-${version}.${ext}"
+      "artifactName": "${productName}-${version}-${target}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/bluesky.icns",
+      "category": "public.app-category.social-networking",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "${productName}-${version}-setup.${ext}"
     },
     "portable": {
-      "splashImage": "assets/bluesky.ico"
-    }
+      "splashImage": "assets/bluesky.ico",
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "dmg": {
+      "sign": false
+    },
+    "publish": null
   },
   "dependencies": {
     "@atproto/api": "^0.6.23",
@@ -69,5 +119,8 @@
     "electron-builder": "^24.9.1",
     "concurrently": "^8.2.2",
     "wait-on": "^7.2.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }

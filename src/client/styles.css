@@ -49,7 +49,6 @@ body {
     transform: scale(1.05);
 }
 
-/* User Info Styles */
 #userInfo {
     margin-bottom: 1.5rem;
     background: var(--card-bg);
@@ -101,26 +100,31 @@ body {
     color: var(--text-muted);
 }
 
-/* Link Item Styles */
-.link-item {
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
+.link-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
     border: 1px solid #e5e7eb;
     border-radius: var(--border-radius);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    background: var(--card-bg);
     transition: all var(--transition-speed);
+    background: var(--card-bg);
 }
 
-.link-item:hover {
+.link-input:focus {
+    outline: none;
     border-color: var(--primary-color);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }
 
-/* Preview Styles */
+.link-input.error {
+    border-color: var(--error-color);
+}
+
+.link-error-message {
+    color: var(--error-color);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
 .preview-item {
     background: var(--card-bg);
     border-radius: var(--border-radius);
@@ -136,7 +140,6 @@ body {
     box-shadow: var(--shadow-md);
 }
 
-/* Form Controls */
 input, textarea {
     width: 100%;
     padding: 0.75rem 1rem;
@@ -179,7 +182,6 @@ button:disabled {
     cursor: not-allowed;
 }
 
-/* Notification Styles */
 .notification {
     position: fixed;
     bottom: 1rem;
@@ -215,7 +217,6 @@ button:disabled {
     display: none !important;
 }
 
-/* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
     :root {
         --bg-color: #1a1a1a;
@@ -235,11 +236,6 @@ button:disabled {
         border-color: #4a4a4a;
     }
 
-    .link-item {
-        border-color: #4a4a4a;
-        background: #333333;
-    }
-
     #userInfo {
         background: var(--card-bg);
         border: 1px solid #4a4a4a;
@@ -250,7 +246,6 @@ button:disabled {
     }
 }
 
-/* Responsive Design */
 @media (max-width: 640px) {
     .container {
         width: 100%;
@@ -264,11 +259,6 @@ button:disabled {
 
     button {
         width: 100%;
-    }
-
-    .link-item {
-        flex-direction: column;
-        align-items: stretch;
     }
 
     .profile-container {

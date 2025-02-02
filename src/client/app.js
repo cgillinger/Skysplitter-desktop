@@ -1,6 +1,6 @@
 /**
  * Skysplitter Desktop - Main Application Logic
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: Christian Gillinger 
  * License: MIT
  */
@@ -13,7 +13,7 @@ const RATE_LIMIT_DELAY = 2000;
 class SkySplitter {
     constructor() {
         this.client = new BlueskyClient();
-        this.links = new Set();
+        this.currentLink = null;
         this.currentPosts = [];
         this.init();
     }
@@ -77,25 +77,29 @@ class SkySplitter {
     }
 
     setupEventListeners() {
-        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+        document.getElementById('auth-form')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             await this.handleLogin(e);
         });
 
         const contentArea = document.getElementById('content');
-        contentArea.addEventListener('input', () => {
-            this.handleTextChange(contentArea.value);
+        contentArea?.addEventListener('input', () => {
+            this.updateCharCount(contentArea.value);
         });
 
-        document.getElementById('splitButton').addEventListener('click', () => {
+        const linkInput = document.getElementById('linkInput');
+        linkInput?.addEventListener('input', (e) => {
+            this.validateLink(e.target.value);
+        });
+
+        document.getElementById('splitButton')?.addEventListener('click', () => {
             this.handleSplit();
         });
 
-        document.getElementById('postButton').addEventListener('click', () => {
+        document.getElementById('postButton')?.addEventListener('click', () => {
             this.handlePost();
         });
 
-        // Create and add logout button
         const appView = document.getElementById('appView');
         if (appView) {
             const buttonContainer = document.createElement('div');
@@ -114,10 +118,28 @@ class SkySplitter {
         }
     }
 
-    // Rest of the class methods remain unchanged
+    validateLink(link) {
+        const linkInput = document.getElementById('linkInput');
+        if (!linkInput) return;
+
+        if (!link) {
+            linkInput.classList.remove('error');
+            this.currentLink = null;
+            return;
+        }
+
+        if (this.client.validateUri(link)) {
+            linkInput.classList.remove('error');
+            this.currentLink = this.client.normalizeUri(link);
+        } else {
+            linkInput.classList.add('error');
+            this.currentLink = null;
+        }
+    }
+
     async handleLogin(event) {
-        const username = document.getElementById('username').value;
-        const appPassword = document.getElementById('appPassword').value;
+        const username = document.getElementById('username')?.value;
+        const appPassword = document.getElementById('appPassword')?.value;
 
         try {
             if (!username || !appPassword) {
@@ -143,74 +165,17 @@ class SkySplitter {
         }
     }
 
-    handleTextChange(text) {
-        const links = this.detectLinks(text);
-        this.updateLinkSection(links);
-        this.updateCharCount(text);
-        
-        // Update links Set
-        this.links.clear();
-        links.forEach(link => this.links.add(link));
-    }
-
-    detectLinks(text) {
-        const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
-        return text.match(urlRegex) || [];
-    }
-
-    updateLinkSection(links) {
-        const linkSection = document.getElementById('linkSection');
-        const linkList = document.getElementById('linkList');
-
-        if (links.length === 0) {
-            linkSection.classList.add('hidden');
-            return;
-        }
-
-        linkSection.classList.remove('hidden');
-        linkList.innerHTML = '';
-
-        for (const link of links) {
-            if (!this.links.has(link)) {
-                this.links.add(link);
-            }
-            const linkEl = this.createLinkElement(link);
-            linkList.appendChild(linkEl);
-        }
-    }
-
-    createLinkElement(link) {
-        const div = document.createElement('div');
-        div.className = 'link-item';
-        
-        const linkText = document.createElement('span');
-        linkText.className = 'truncate flex-1 mr-4';
-        linkText.textContent = link;
-        
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'text-red-600 hover:text-red-800';
-        removeBtn.textContent = 'Remove';
-        removeBtn.onclick = () => this.removeLink(link);
-        
-        div.appendChild(linkText);
-        div.appendChild(removeBtn);
-        return div;
-    }
-
-    removeLink(link) {
-        const contentArea = document.getElementById('content');
-        contentArea.value = contentArea.value.replace(link, '');
-        this.handleTextChange(contentArea.value);
-    }
-
     updateCharCount(text) {
-        const count = text.length;
-        document.getElementById('charCount').textContent = `${count} characters`;
-        document.getElementById('splitButton').disabled = count === 0;
+        const count = text ? text.length : 0;
+        const charCount = document.getElementById('charCount');
+        const splitButton = document.getElementById('splitButton');
+        
+        if (charCount) charCount.textContent = `${count} characters`;
+        if (splitButton) splitButton.disabled = count === 0;
     }
 
     handleSplit() {
-        const text = document.getElementById('content').value;
+        const text = document.getElementById('content')?.value;
         if (!text) return;
 
         this.currentPosts = this.splitText(text);
@@ -221,40 +186,28 @@ class SkySplitter {
         const words = text.split(' ');
         let posts = [];
         let currentPost = '';
-        let currentLinks = new Set();
         
         for (let i = 0; i < words.length; i++) {
             const word = words[i];
-            const isLink = this.detectLinks(word).length > 0;
             const potentialPostNumber = posts.length + 1;
             const maxContinuationLength = ` (${potentialPostNumber}/?)`.length;
             
             if (currentPost.length + 1 + word.length + maxContinuationLength <= MAX_POST_LENGTH) {
                 currentPost += (currentPost ? ' ' : '') + word;
-                if (isLink) {
-                    currentLinks.add(word);
-                }
             } else {
                 if (currentPost) {
                     posts.push({
                         text: currentPost,
-                        links: Array.from(currentLinks)
+                        link: null
                     });
                     currentPost = word;
-                    currentLinks = new Set();
-                    if (isLink) {
-                        currentLinks.add(word);
-                    }
                 } else {
                     const availableLength = MAX_POST_LENGTH - maxContinuationLength;
                     posts.push({
                         text: word.substring(0, availableLength),
-                        links: []
+                        link: null
                     });
                     currentPost = word.substring(availableLength);
-                    if (isLink) {
-                        currentLinks.add(word);
-                    }
                 }
             }
         }
@@ -262,8 +215,24 @@ class SkySplitter {
         if (currentPost) {
             posts.push({
                 text: currentPost,
-                links: Array.from(currentLinks)
+                link: null
             });
+        }
+
+        // Add link to the last post if it exists
+        if (this.currentLink && posts.length > 0) {
+            const lastPost = posts[posts.length - 1];
+            const linkWithSpace = ' ' + this.currentLink;
+            
+            if (lastPost.text.length + linkWithSpace.length <= MAX_POST_LENGTH) {
+                lastPost.text += linkWithSpace;
+                lastPost.link = this.currentLink;
+            } else {
+                posts.push({
+                    text: this.currentLink,
+                    link: this.currentLink
+                });
+            }
         }
 
         return posts.map((post, index) => ({
@@ -276,6 +245,8 @@ class SkySplitter {
         const previewArea = document.getElementById('previewArea');
         const postPreviews = document.getElementById('postPreviews');
         
+        if (!previewArea || !postPreviews) return;
+        
         previewArea.classList.remove('hidden');
         postPreviews.innerHTML = '';
 
@@ -283,14 +254,14 @@ class SkySplitter {
             const preview = document.createElement('div');
             preview.className = 'preview-item';
             
-            const linksHtml = post.links.length > 0 
-                ? `<div class="text-sm text-blue-500 mt-2">${post.links.length} link(s) detected</div>` 
+            const linkHtml = post.link 
+                ? `<div class="text-sm text-blue-500 mt-2">Contains link: ${post.link}</div>` 
                 : '';
             
             preview.innerHTML = `
                 <div class="font-medium mb-2">Post ${index + 1} of ${posts.length}</div>
                 <div class="mt-2 border-l-4 border-blue-500 pl-3">${post.text}</div>
-                ${linksHtml}
+                ${linkHtml}
                 <div class="text-sm text-gray-500 mt-2">${post.text.length} characters</div>
             `;
             postPreviews.appendChild(preview);
@@ -300,6 +271,8 @@ class SkySplitter {
     async handlePost() {
         if (!this.currentPosts.length) return;
 
+        const postProgress = this.createProgressElement();
+
         try {
             let rootPost = null;
             let parentPost = null;
@@ -307,6 +280,7 @@ class SkySplitter {
             for (let i = 0; i < this.currentPosts.length; i++) {
                 const post = this.currentPosts[i];
                 let reply = null;
+                
                 if (rootPost) {
                     reply = {
                         root: rootPost,
@@ -314,7 +288,7 @@ class SkySplitter {
                     };
                 }
 
-                const response = await this.client.createPost(post.text, post.links, reply);
+                const response = await this.client.createPost(post.text, post.link, reply);
 
                 if (i === 0) {
                     rootPost = {
@@ -329,31 +303,49 @@ class SkySplitter {
                 };
 
                 await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DELAY));
-                this.updateProgress(i + 1, this.currentPosts.length);
+                this.updateProgress(i + 1, this.currentPosts.length, postProgress);
             }
             
             this.showNotification('All posts created successfully!', 'success');
-            
-            document.getElementById('content').value = '';
-            document.getElementById('previewArea').classList.add('hidden');
-            this.currentPosts = [];
-            this.updateCharCount('');
-            this.links.clear();
+            this.resetUI();
             
         } catch (error) {
             this.showNotification(`Error: ${error.message}`, 'error');
         }
     }
 
-    updateProgress(current, total) {
+    createProgressElement() {
+        const previewArea = document.getElementById('previewArea');
         let progress = document.getElementById('postProgress');
-        if (!progress) {
+        
+        if (!progress && previewArea) {
             progress = document.createElement('div');
             progress.id = 'postProgress';
             progress.className = 'text-sm text-gray-600 mt-2 text-center';
-            document.getElementById('previewArea').appendChild(progress);
+            previewArea.appendChild(progress);
         }
-        progress.textContent = `Posted ${current} of ${total}`;
+        
+        return progress;
+    }
+
+    updateProgress(current, total, progressElement) {
+        if (progressElement) {
+            progressElement.textContent = `Posted ${current} of ${total}`;
+        }
+    }
+
+    resetUI() {
+        const contentArea = document.getElementById('content');
+        const previewArea = document.getElementById('previewArea');
+        const linkInput = document.getElementById('linkInput');
+        
+        if (contentArea) contentArea.value = '';
+        if (previewArea) previewArea.classList.add('hidden');
+        if (linkInput) linkInput.value = '';
+        
+        this.currentPosts = [];
+        this.currentLink = null;
+        this.updateCharCount('');
     }
 
     showNotification(message, type) {
