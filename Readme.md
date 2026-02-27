@@ -16,6 +16,12 @@ Skysplitter is a desktop application that helps you split long texts into multip
   <p><em>Final thread preview with posting option</em></p>
 </div>
 
+## Web Version
+
+A web-based version of Skysplitter is also available — no download or installation required. It runs as a Node.js web server and works in any modern browser.
+
+Check it out here: [Skysplitter Web](https://github.com/cgillinger/Skysplitter-web)
+
 ## Features
 
 - Split long text into multiple posts automatically
