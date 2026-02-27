@@ -1,11 +1,14 @@
 /**
- * Skysplitter Desktop - Bluesky API Client
- * Version: 1.0.3
+ * Skysplitter Web - Bluesky API Client
+ * Version: 2.0.0
  * Author: Christian Gillinger
  * License: MIT
  */
 
 const { BskyAgent, RichText } = require('@atproto/api');
+
+// Use native fetch (Node 18+) or fall back to node-fetch
+const fetch = globalThis.fetch || require('node-fetch');
 
 class BlueskyClient {
     constructor() {
@@ -14,7 +17,6 @@ class BlueskyClient {
         });
         this.isAuthenticated = false;
         this.currentUser = null;
-        this.sessionRestoreAttempted = false;
         this.debug = true;
         this.maxRetries = 3;
         this.retryDelay = 1000;
@@ -32,55 +34,20 @@ class BlueskyClient {
         }
     }
 
-    async checkSession() {
-        if (this.sessionRestoreAttempted) {
-            return this.isAuthenticated;
-        }
-
-        const credentials = sessionStorage.getItem('bluesky_credentials');
-        if (credentials) {
-            try {
-                const { identifier, password } = JSON.parse(credentials);
-                await this.agent.login({
-                    identifier,
-                    password
-                });
-                this.isAuthenticated = true;
-                await this.fetchCurrentUser();
-                return true;
-            } catch (error) {
-                this.logError('Session restore failed:', error);
-                sessionStorage.removeItem('bluesky_credentials');
-                this.isAuthenticated = false;
-                this.currentUser = null;
-                return false;
-            } finally {
-                this.sessionRestoreAttempted = true;
-            }
-        }
-        this.sessionRestoreAttempted = true;
-        return false;
-    }
-
     async login(identifier, appPassword) {
         try {
             await this.agent.login({
                 identifier,
                 password: appPassword
             });
-            
+
             this.isAuthenticated = true;
             await this.fetchCurrentUser();
-            
-            sessionStorage.setItem('bluesky_credentials', JSON.stringify({
-                identifier,
-                password: appPassword
-            }));
             return true;
         } catch (error) {
             this.isAuthenticated = false;
             this.currentUser = null;
-            
+
             if (error.status === 401) {
                 throw new Error('Invalid username or password');
             } else if (error.status === 429) {
@@ -115,16 +82,8 @@ class BlueskyClient {
     }
 
     async logout() {
-        try {
-            this.isAuthenticated = false;
-            this.currentUser = null;
-            this.sessionRestoreAttempted = false;
-            sessionStorage.removeItem('bluesky_credentials');
-            return true;
-        } catch (error) {
-            this.logError('Logout error:', error);
-            throw new Error('Failed to logout properly');
-        }
+        this.isAuthenticated = false;
+        this.currentUser = null;
     }
 
     validateUri(uri) {
@@ -184,12 +143,12 @@ class BlueskyClient {
                         } catch (embedError) {
                             const isLastAttempt = attempt === this.maxRetries - 1;
                             const status = embedError?.response?.status;
-                            
+
                             if (isLastAttempt) {
                                 this.logError(`Embed creation failed (${status}):`, embedError);
                                 embedWarning = this.getEmbedErrorMessage(status, new URL(link).hostname);
                             } else {
-                                await new Promise(resolve => 
+                                await new Promise(resolve =>
                                     setTimeout(resolve, this.retryDelay * Math.pow(2, attempt))
                                 );
                             }
@@ -251,8 +210,7 @@ class BlueskyClient {
             const response = await fetch(url, {
                 headers,
                 redirect: 'follow',
-                signal: controller.signal,
-                credentials: 'omit'
+                signal: controller.signal
             });
 
             clearTimeout(timeoutId);
@@ -269,11 +227,11 @@ class BlueskyClient {
             }
 
             const metadata = {
-                title: this.extractMetaContent(html, 'og:title') || 
-                       this.extractMetaContent(html, 'title') || 
+                title: this.extractMetaContent(html, 'og:title') ||
+                       this.extractMetaContent(html, 'title') ||
                        new URL(url).hostname,
-                description: this.extractMetaContent(html, 'og:description') || 
-                            this.extractMetaContent(html, 'description') || 
+                description: this.extractMetaContent(html, 'og:description') ||
+                            this.extractMetaContent(html, 'description') ||
                             '',
                 image: this.extractMetaContent(html, 'og:image')
             };
@@ -297,18 +255,21 @@ class BlueskyClient {
                         },
                         signal: controller.signal
                     });
-                    
+
                     if (imgResponse.ok) {
-                        const blob = await imgResponse.blob();
-                        if (blob.size <= 1000000) {
-                            const upload = await this.agent.uploadBlob(blob, {
-                                encoding: blob.type
+                        const arrayBuffer = await imgResponse.arrayBuffer();
+                        const uint8Array = new Uint8Array(arrayBuffer);
+                        const contentType = imgResponse.headers.get('content-type') || 'image/jpeg';
+
+                        if (uint8Array.length <= 1000000) {
+                            const upload = await this.agent.uploadBlob(uint8Array, {
+                                encoding: contentType
                             });
                             if (upload?.data?.blob) {
                                 embedData.external.thumb = upload.data.blob;
                             }
                         } else {
-                            this.log('Image too large:', blob.size, 'bytes');
+                            this.log('Image too large:', uint8Array.length, 'bytes');
                         }
                     }
                 } catch (imageError) {
@@ -328,7 +289,7 @@ class BlueskyClient {
 
     extractMetaContent(html, name) {
         if (!html) return null;
-        
+
         try {
             const ogPattern = new RegExp(`<meta[^>]*(?:property|name)=["'](?:${name}|og:${name})["'][^>]*content=["']([^"']+)["']`, 'i');
             const ogMatch = html.match(ogPattern);
