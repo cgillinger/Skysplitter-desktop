@@ -2,6 +2,8 @@
 
 Skysplitter is a desktop application that helps you split long texts into multiple posts for the Bluesky social network. It automatically handles thread creation and maintains continuity between posts.
 
+> This is a personal hobby project I build for my own use and publish in case it's useful to someone else. I work on it in my spare time, so issues and PRs are welcome but replies may be slow. Use at your own risk.
+
 <div align="center">
   <img src="screenshots/screenshot3.png" alt="Login Interface" width="800"/>
   <p><em>Secure login interface with App Password support</em></p>
